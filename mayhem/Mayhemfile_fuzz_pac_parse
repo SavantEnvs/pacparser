@@ -1,0 +1,20 @@
+# fuzz_pac_parse — pacparser's PAC (proxy auto-config) JavaScript parser. Feeds raw bytes directly
+# as PAC script text to pacparser_parse_pac_string(), then drives pacparser_find_proxy() with fixed
+# url/host pairs to exercise findProxyForURL() -- pacparser's own PAC-specific JS extensions
+# (dnsDomainIs, isInNet*, shExpMatch, weekdayRange, dateRange, timeRange, dnsResolve, myIpAddress,
+# ...) plus the vendored QuickJS-ng engine underneath. No file I/O, no absolute-path reads. Seeds:
+# the project's own bundled PAC fixtures (tests/proxy.pac, tests/logging.pac, examples/wpad.dat,
+# web/sample.pac) plus a few hand-written snippets covering weekdayRange/dateRange/timeRange/
+# isInNetEx6/shExpMatch, none of which the bundled fixtures otherwise exercise.
+project: savantenvs/pacparser
+target: fuzz_pac_parse
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/fuzz_pac_parse/testsuite
+cmds:
+  - cmd: /mayhem/fuzz_pac_parse
+    libfuzzer: true
+    timeout: 30
+    dictionary: /mayhem/mayhem/fuzz_pac_parse/fuzz_pac_parse.dict
+    env:
+      MFUZZ_COMPAT_LEVEL: '2'
