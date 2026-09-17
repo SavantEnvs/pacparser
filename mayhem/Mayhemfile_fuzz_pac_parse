@@ -1,0 +1,21 @@
+# fuzz_pac_parse — BACKPORT (repro-ba807d6, mayhemheroes/pacparser target "pacparser" run 17).
+# At this commit pacparser vendors the OLD Mozilla SpiderMonkey engine (src/spidermonkey/), not the
+# later QuickJS-ng rewrite. Feeds raw bytes directly as PAC script text to
+# pacparser_parse_pac_string(), then drives pacparser_find_proxy() with fixed url/host pairs to
+# exercise findProxyForURL() -- pacparser's own PAC-specific JS extensions (dnsDomainIs, isInNet*,
+# shExpMatch, weekdayRange, dateRange, timeRange, dnsResolve, myIpAddress, ...) plus the vendored
+# SpiderMonkey engine underneath. No file I/O, no absolute-path reads. Same input shape (a raw PAC
+# script) as the original mayhemheroes harness (`/pactester -p @@ -u google.com`), so its saved
+# testsuite replays directly.
+# origin: https://app.mayhem.security/mayhemheroes/pacparser/pacparser/17
+project: savantenvs/pacparser
+target: pacparser-buggy-mhh-run-17
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+cmds:
+  - cmd: /mayhem/fuzz_pac_parse
+    libfuzzer: true
+    timeout: 30
+    dictionary: /mayhem/mayhem/pacparser-buggy-mhh-run-17/fuzz_pac_parse.dict
+    env:
+      MFUZZ_COMPAT_LEVEL: '2'
